@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3333:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_APP_URL=http://localhost:3333
+      - NEXT_PUBLIC_SUPABASE_URL=dummy
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy
+    volumes:
+      - .:/app
+      - /app/node_modules
