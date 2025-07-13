@@ -15,10 +15,12 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from src.api.v1.router import api_router
 from src.core.config import settings
-from src.core.logging import setup_logging
+from datetime import datetime
+from src.core.logging import setup_logging, get_logger
 
 # Setup logging
 setup_logging()
+logger = get_logger(__name__)
 
 # Setup Sentry if DSN is provided
 if settings.SENTRY_DSN:
@@ -34,7 +36,7 @@ if settings.SENTRY_DSN:
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    print("🚀 Starting Borg-Tools Backend...")
+    logger.info("🚀 Starting Borg-Tools Backend...")
     
     # Initialize database connections, caches, etc.
     # TODO: Add database initialization
@@ -42,7 +44,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    print("🛑 Shutting down Borg-Tools Backend...")
+    logger.info("🛑 Shutting down Borg-Tools Backend...")
     # TODO: Add cleanup tasks
 
 
@@ -73,7 +75,11 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "version": "0.1.0"}
+    return {
+        "status": "healthy",
+        "version": "0.1.0",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
 # Root endpoint
