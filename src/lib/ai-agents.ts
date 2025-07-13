@@ -1,4 +1,11 @@
 import { ProcessedGitHubData } from './github-service';
+import { 
+  createOpenRouterClient, 
+  OpenRouterClient, 
+  OpenRouterApiError,
+  getOptimalModelForTask,
+  getFallbackModels 
+} from './openrouter-client';
 
 // AI Agent Types and Interfaces
 export interface AgentConfig {
@@ -7,6 +14,7 @@ export interface AgentConfig {
   temperature: number;
   maxTokens: number;
   systemPrompt: string;
+  taskType: 'summary' | 'experience' | 'projects' | 'skills' | 'ats';
 }
 
 export interface AgentResponse {
@@ -48,13 +56,14 @@ export interface CVContent {
   keywords: string[]; // For ATS optimization
 }
 
-// Agent Configurations
+// Agent Configurations with OpenRouter models
 export const AGENT_CONFIGS: Record<string, AgentConfig> = {
   SUMMARY_GENERATOR: {
     name: 'Professional Summary Generator',
-    model: 'claude-3-haiku-20240307',
+    model: 'mistralai/mistral-small:free',
     temperature: 0.7,
     maxTokens: 500,
+    taskType: 'summary',
     systemPrompt: `You are an expert CV writer specializing in creating compelling professional summaries for software developers. 
 
 Your task is to analyze GitHub profile data and create a professional summary that:
@@ -70,9 +79,10 @@ Keep the summary concise (3-4 sentences, max 150 words) and focus on what makes 
 
   EXPERIENCE_WRITER: {
     name: 'Experience Description Writer',
-    model: 'gpt-4o-mini',
+    model: 'openrouter/optimus-alpha:free',
     temperature: 0.6,
     maxTokens: 800,
+    taskType: 'experience',
     systemPrompt: `You are a professional CV writer specializing in translating GitHub activity into compelling work experience descriptions.
 
 Your task is to create professional experience entries that:
@@ -88,9 +98,10 @@ Focus on demonstrating impact, growth, and technical expertise through concrete 
 
   PROJECT_ENHANCER: {
     name: 'Project Description Enhancer',
-    model: 'claude-3-haiku-20240307',
+    model: 'openrouter/cypher-alpha:free',
     temperature: 0.5,
     maxTokens: 600,
+    taskType: 'projects',
     systemPrompt: `You are a technical writer specializing in creating compelling project descriptions for developer portfolios.
 
 Your task is to enhance project descriptions by:
@@ -106,9 +117,10 @@ Transform basic repository information into compelling project narratives that d
 
   SKILLS_ORGANIZER: {
     name: 'Technical Skills Organizer',
-    model: 'gpt-4o-mini',
+    model: 'mistralai/mistral-small:free',
     temperature: 0.3,
     maxTokens: 400,
+    taskType: 'skills',
     systemPrompt: `You are an expert in organizing and categorizing technical skills for software developer CVs.
 
 Your task is to:
@@ -124,9 +136,10 @@ Create a well-organized, comprehensive skills section that accurately represents
 
   ATS_OPTIMIZER: {
     name: 'ATS Optimization Specialist',
-    model: 'gpt-4o-mini',
+    model: 'openrouter/optimus-alpha:free',
     temperature: 0.2,
     maxTokens: 300,
+    taskType: 'ats',
     systemPrompt: `You are an ATS (Applicant Tracking System) optimization expert specializing in developer CVs.
 
 Your task is to:
@@ -141,33 +154,175 @@ Provide specific recommendations to improve ATS compatibility while maintaining 
   }
 };
 
-// Mock AI Agent Implementation
-// In a real implementation, these would call actual AI APIs (OpenAI, Anthropic, etc.)
+// Real AI Agent Implementation using OpenRouter
 export class AIAgent {
   private config: AgentConfig;
+  private client: OpenRouterClient;
 
   constructor(config: AgentConfig) {
     this.config = config;
+    this.client = createOpenRouterClient();
   }
 
   async process(prompt: string, data: any): Promise<AgentResponse> {
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    try {
+      // Prepare the user prompt with GitHub data context
+      const contextualPrompt = this.buildContextualPrompt(prompt, data);
+      
+      // Get the optimal model for this task type
+      const modelToUse = getOptimalModelForTask(this.config.taskType);
+      
+      console.log(`🤖 Agent "${this.config.name}" using model: ${modelToUse}`);
+      
+      // Make API call to OpenRouter
+      const response = await this.client.chat({
+        model: modelToUse,
+        messages: [
+          { role: 'system', content: this.config.systemPrompt },
+          { role: 'user', content: contextualPrompt }
+        ],
+        temperature: this.config.temperature,
+        max_tokens: this.config.maxTokens,
+      });
 
-    // Mock response based on agent type
-    const content = this.generateMockResponse(prompt, data);
+      const content = response.choices[0].message.content;
+      
+      return {
+        content,
+        usage: {
+          promptTokens: response.usage.prompt_tokens,
+          completionTokens: response.usage.completion_tokens,
+          totalTokens: response.usage.total_tokens,
+        },
+        metadata: {
+          model: response.model,
+          temperature: this.config.temperature,
+          timestamp: new Date().toISOString(),
+          openrouter_response_id: response.id,
+        }
+      };
+
+    } catch (error) {
+      // Handle OpenRouter API errors with fallback
+      if (error instanceof OpenRouterApiError) {
+        console.warn(`⚠️ OpenRouter API error for ${this.config.name}:`, error.message);
+        
+        // Try fallback models if current model fails
+        if (error.isModelUnavailable || error.isRateLimited) {
+          return await this.tryFallbackModels(prompt, data, error);
+        }
+        
+        // For other errors, generate a fallback response
+        if (error.isInvalidKey) {
+          console.error('❌ Invalid OpenRouter API key. Check your OPENROUTER_API_KEY environment variable.');
+          return this.generateFallbackResponse(data, 'API key error');
+        }
+        
+        if (error.isInsufficientCredits) {
+          console.warn('💰 Insufficient OpenRouter credits. Using fallback response.');
+          return this.generateFallbackResponse(data, 'Insufficient credits');
+        }
+      }
+      
+      console.error(`❌ Unexpected error in ${this.config.name}:`, error);
+      return this.generateFallbackResponse(data, 'Unexpected error');
+    }
+  }
+
+  private async tryFallbackModels(prompt: string, data: any, originalError: OpenRouterApiError): Promise<AgentResponse> {
+    const fallbackModels = getFallbackModels();
+    
+    for (const fallbackModel of fallbackModels) {
+      if (fallbackModel === this.config.model) continue; // Skip the model that failed
+      
+      try {
+        console.log(`🔄 Trying fallback model: ${fallbackModel}`);
+        
+        const contextualPrompt = this.buildContextualPrompt(prompt, data);
+        
+        const response = await this.client.chat({
+          model: fallbackModel,
+          messages: [
+            { role: 'system', content: this.config.systemPrompt },
+            { role: 'user', content: contextualPrompt }
+          ],
+          temperature: this.config.temperature,
+          max_tokens: this.config.maxTokens,
+        });
+
+        const content = response.choices[0].message.content;
+        
+        return {
+          content,
+          usage: {
+            promptTokens: response.usage.prompt_tokens,
+            completionTokens: response.usage.completion_tokens,
+            totalTokens: response.usage.total_tokens,
+          },
+          metadata: {
+            model: response.model,
+            temperature: this.config.temperature,
+            timestamp: new Date().toISOString(),
+            openrouter_response_id: response.id,
+            fallback_used: true,
+            original_error: originalError.message,
+          }
+        };
+        
+      } catch (fallbackError) {
+        console.warn(`⚠️ Fallback model ${fallbackModel} also failed:`, fallbackError);
+        continue;
+      }
+    }
+    
+    // If all fallback models fail, use mock response
+    console.warn(`⚠️ All models failed for ${this.config.name}. Using fallback response.`);
+    return this.generateFallbackResponse(data, 'All models failed');
+  }
+
+  private buildContextualPrompt(prompt: string, data: ProcessedGitHubData): string {
+    // Create a structured prompt with relevant GitHub data
+    const context = this.extractRelevantContext(data);
+    
+    return `${prompt}
+
+GITHUB PROFILE CONTEXT:
+${context}
+
+Please generate appropriate content based on this GitHub profile data and the task requirements.`;
+  }
+
+  private extractRelevantContext(data: ProcessedGitHubData): string {
+    return `Profile: ${data.profile.name} (@${data.profile.username})
+Bio: ${data.profile.bio || 'No bio available'}
+Experience: ${data.summary.yearsOfExperience} years
+Primary Role: ${data.summary.primaryRole}
+Repositories: ${data.repositories.total} total, ${data.repositories.totalStars} stars, ${data.repositories.totalForks} forks
+Top Languages: ${data.skills.primaryLanguages.slice(0, 3).join(', ')}
+Frameworks: ${data.skills.frameworks.slice(0, 3).join(', ')}
+Tools: ${data.skills.tools.slice(0, 3).join(', ')}
+Domains: ${data.skills.domains.join(', ')}
+Top Projects: ${data.projects.showcaseProjects.slice(0, 3).map(p => `${p.name} - ${p.description}`).join('; ')}
+Achievements: ${data.summary.achievementHighlights.join('; ')}`;
+  }
+
+  private generateFallbackResponse(data: ProcessedGitHubData, reason: string): AgentResponse {
+    // Generate a fallback response using the mock logic
+    const content = this.generateMockResponse('Generate professional content', data);
     
     return {
       content,
       usage: {
-        promptTokens: Math.floor(Math.random() * 500) + 100,
-        completionTokens: Math.floor(Math.random() * 300) + 50,
-        totalTokens: Math.floor(Math.random() * 800) + 150,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
       },
       metadata: {
-        model: this.config.model,
+        model: 'fallback',
         temperature: this.config.temperature,
         timestamp: new Date().toISOString(),
+        fallback_reason: reason,
+        is_mock_response: true,
       }
     };
   }
@@ -294,10 +449,22 @@ export class CVContentGenerator {
   }
 
   async generateCVContent(githubData: ProcessedGitHubData, targetRole?: string): Promise<CVContent> {
-    console.log('🤖 Starting AI-powered CV content generation...');
+    console.log('🤖 Starting AI-powered CV content generation with OpenRouter...');
 
     try {
-      // Generate content using different AI agents
+      // Test OpenRouter connection first
+      try {
+        const testClient = createOpenRouterClient();
+        const connectionTest = await testClient.testConnection();
+        console.log(`✅ OpenRouter connection successful: ${connectionTest.response}`);
+      } catch (testError) {
+        console.warn('⚠️ OpenRouter connection test failed, proceeding with generation (may use fallbacks)');
+      }
+
+      // Generate content using different AI agents in parallel
+      console.log('🔄 Running 5 AI agents in parallel...');
+      const startTime = Date.now();
+      
       const [
         professionalSummary,
         experienceDescription,
@@ -327,7 +494,24 @@ export class CVContentGenerator {
         )
       ]);
 
-      console.log('✅ AI content generation completed');
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ AI content generation completed in ${duration}ms`);
+      
+      // Log generation statistics
+      const totalTokens = [professionalSummary, experienceDescription, projectDescriptions, skillsOrganization, atsOptimization]
+        .reduce((sum, response) => sum + (response.usage?.totalTokens || 0), 0);
+      
+      console.log(`📊 Generation stats: ${totalTokens} total tokens used`);
+      
+      // Check if any agents used fallback responses
+      const fallbacksUsed = [professionalSummary, experienceDescription, projectDescriptions, skillsOrganization, atsOptimization]
+        .filter(response => response.metadata?.is_mock_response || response.metadata?.fallback_used);
+      
+      if (fallbacksUsed.length > 0) {
+        console.warn(`⚠️ ${fallbacksUsed.length}/5 agents used fallback responses`);
+      }
 
       // Process and structure the generated content
       return this.structureCVContent(
@@ -341,7 +525,7 @@ export class CVContentGenerator {
 
     } catch (error) {
       console.error('❌ AI content generation failed:', error);
-      throw new Error(`Failed to generate CV content: ${error}`);
+      throw new Error(`Failed to generate CV content: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { runAIAgentsTests } from '@/lib/ai-agents-test';
+import { runOpenRouterTests } from '@/lib/openrouter-test';
 
 export default function AIAgentsTestPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [openRouterResults, setOpenRouterResults] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [testType, setTestType] = useState<'ai-agents' | 'openrouter'>('openrouter');
 
   const runTests = async () => {
     setIsRunning(true);
@@ -28,13 +31,25 @@ export default function AIAgentsTestPage() {
     };
 
     try {
-      const testResults = await runAIAgentsTests();
-      setResults(testResults);
+      if (testType === 'openrouter') {
+        const testResults = await runOpenRouterTests();
+        setOpenRouterResults(testResults);
+      } else {
+        const testResults = await runAIAgentsTests();
+        setResults(testResults);
+      }
     } catch (error) {
-      setResults({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      if (testType === 'openrouter') {
+        setOpenRouterResults({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      } else {
+        setResults({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     } finally {
       // Restore console
       console.log = originalLog;
@@ -49,19 +64,77 @@ export default function AIAgentsTestPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">AI Agents Integration Test</h1>
           <p className="text-gray-300 mb-6">
-            Test the AI-powered CV content generation system with mock GitHub data.
+            Test the AI-powered CV content generation system with real OpenRouter models or mock data.
           </p>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">Test Type:</label>
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="openrouter"
+                  checked={testType === 'openrouter'}
+                  onChange={(e) => setTestType(e.target.value as 'openrouter')}
+                  className="mr-2"
+                />
+                OpenRouter Integration (Real AI)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="ai-agents"
+                  checked={testType === 'ai-agents'}
+                  onChange={(e) => setTestType(e.target.value as 'ai-agents')}
+                  className="mr-2"
+                />
+                Mock AI Agents
+              </label>
+            </div>
+          </div>
           
           <button
             onClick={runTests}
             disabled={isRunning}
             className="bg-green-500 hover:bg-green-600 disabled:bg-gray-600 px-6 py-3 rounded-lg font-semibold transition-colors"
           >
-            {isRunning ? 'Running Tests...' : 'Run AI Agents Tests'}
+            {isRunning ? 'Running Tests...' : `Run ${testType === 'openrouter' ? 'OpenRouter' : 'Mock AI'} Tests`}
           </button>
         </div>
 
-        {/* Test Results */}
+        {/* OpenRouter Test Results */}
+        {openRouterResults && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">OpenRouter Test Results</h2>
+            <div className={`p-4 rounded-lg ${openRouterResults.success ? 'bg-green-900 border border-green-500' : 'bg-red-900 border border-red-500'}`}>
+              <div className="flex items-center mb-2">
+                <span className={`text-2xl mr-2 ${openRouterResults.success ? 'text-green-400' : 'text-red-400'}`}>
+                  {openRouterResults.success ? '✅' : '❌'}
+                </span>
+                <span className="font-semibold">
+                  {openRouterResults.success ? 'All OpenRouter Tests Passed' : 'OpenRouter Tests Failed'}
+                </span>
+              </div>
+              
+              {openRouterResults.error && (
+                <p className="text-red-300 mt-2">Error: {openRouterResults.error}</p>
+              )}
+              
+              {openRouterResults.summary && (
+                <div className="mt-4 space-y-2">
+                  <p><span className="text-blue-400">Connection:</span> {openRouterResults.summary.connectionWorking ? '✅ Working' : '❌ Failed'}</p>
+                  <p><span className="text-blue-400">Working Models:</span> {openRouterResults.summary.workingModels}/{openRouterResults.summary.totalModels}</p>
+                  <p><span className="text-blue-400">CV Generation:</span> {openRouterResults.summary.cvGenerationWorking ? '✅ Working' : '❌ Failed'}</p>
+                  {openRouterResults.summary.recommendedModel && (
+                    <p><span className="text-blue-400">Recommended Model:</span> {openRouterResults.summary.recommendedModel}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mock AI Test Results */}
         {results && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4">Test Results</h2>
