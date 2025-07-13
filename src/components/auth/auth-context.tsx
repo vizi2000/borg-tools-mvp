@@ -83,15 +83,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+      } else if (response.status === 401) {
+        // Token is invalid/expired, remove it silently
+        localStorage.removeItem('borg_tools_token');
+        setUser(null);
       } else {
-        // Token is invalid, remove it
+        // Other errors - log but don't show to user since this is a background operation
+        console.error('Failed to refresh user:', response.status, response.statusText);
+        // Don't remove token for temporary errors, let user try again
+        if (response.status >= 500) {
+          // Server errors - keep token and user can try again
+          return;
+        }
+        // Client errors other than 401 - remove token
         localStorage.removeItem('borg_tools_token');
         setUser(null);
       }
     } catch (error) {
-      console.error('Failed to refresh user:', error);
-      localStorage.removeItem('borg_tools_token');
-      setUser(null);
+      console.error('Network error during user refresh:', error);
+      // Don't remove token on network errors - user might be offline
+      // They can try again when connection is restored
     } finally {
       setIsLoading(false);
     }

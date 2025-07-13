@@ -15,6 +15,9 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { categorizeError } from '@/lib/network';
+import { LoadingButton, LoadingSpinner } from '@/components/ui/loading';
 
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated, logout, isDemoMode } = useAuth();
@@ -137,6 +140,7 @@ export default function DashboardPage() {
 
 function GenerateTab({ user }: { user: any }) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     includePrivateRepos: false,
     maxProjects: 5,
@@ -146,14 +150,45 @@ function GenerateTab({ user }: { user: any }) {
     theme: 'neon-tech'
   });
   const { isDemoMode } = useAuth();
+  const { error: showErrorToast, success: showSuccessToast } = useToast();
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate LinkedIn URL if included
+    if (formData.includeLinkedIn && formData.linkedInUrl) {
+      const linkedInRegex = /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
+      if (!linkedInRegex.test(formData.linkedInUrl)) {
+        newErrors.linkedInUrl = 'Please enter a valid LinkedIn profile URL (e.g., https://linkedin.com/in/username)';
+      }
+    } else if (formData.includeLinkedIn && !formData.linkedInUrl) {
+      newErrors.linkedInUrl = 'LinkedIn URL is required when LinkedIn integration is enabled';
+    }
+
+    // Validate target role length
+    if (formData.targetRole && formData.targetRole.length > 100) {
+      newErrors.targetRole = 'Target role must be less than 100 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleGenerate = async () => {
+    // Validate form first
+    if (!validateForm()) {
+      showErrorToast('Validation Error', 'Please fix the form errors before continuing');
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
       if (isDemoMode) {
         // In demo mode, simulate CV generation
         const demoJobId = `demo_cv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        showSuccessToast('Demo CV Started', 'Generating your demo CV...');
         
         // Short delay to simulate processing
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -175,14 +210,22 @@ function GenerateTab({ user }: { user: any }) {
       const data = await response.json();
 
       if (response.ok) {
+        showSuccessToast('CV Generation Started', 'Your CV is being generated...');
         // Redirect to status page
         window.location.href = `/cv/${data.job_id}`;
       } else {
-        throw new Error(data.error || 'Failed to generate CV');
+        const { userMessage } = categorizeError({ status: response.status, message: data.error });
+        throw new Error(userMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('CV generation error:', error);
-      // TODO: Show error toast
+      
+      const { type, userMessage, isRetryable } = categorizeError(error);
+      
+      showErrorToast(
+        'CV Generation Failed',
+        isRetryable ? `${userMessage} Please try again.` : userMessage
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -204,10 +247,22 @@ function GenerateTab({ user }: { user: any }) {
               <input
                 type="text"
                 value={formData.targetRole}
-                onChange={(e) => setFormData(prev => ({ ...prev, targetRole: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, targetRole: e.target.value }));
+                  if (errors.targetRole) {
+                    setErrors(prev => ({ ...prev, targetRole: '' }));
+                  }
+                }}
                 placeholder="e.g., Senior Software Engineer"
-                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:border-transparent ${
+                  errors.targetRole 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-border focus:ring-primary'
+                }`}
               />
+              {errors.targetRole && (
+                <p className="text-xs text-red-400 mt-1">{errors.targetRole}</p>
+              )}
               <p className="text-xs text-text-muted mt-1">
                 Help AI tailor your CV for specific positions
               </p>
@@ -261,35 +316,41 @@ function GenerateTab({ user }: { user: any }) {
               </div>
               
               {formData.includeLinkedIn && (
-                <input
-                  type="url"
-                  value={formData.linkedInUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, linkedInUrl: e.target.value }))}
-                  placeholder="https://linkedin.com/in/username"
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+                <div>
+                  <input
+                    type="url"
+                    value={formData.linkedInUrl}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, linkedInUrl: e.target.value }));
+                      if (errors.linkedInUrl) {
+                        setErrors(prev => ({ ...prev, linkedInUrl: '' }));
+                      }
+                    }}
+                    placeholder="https://linkedin.com/in/username"
+                    className={`w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:border-transparent ${
+                      errors.linkedInUrl 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-border focus:ring-primary'
+                    }`}
+                  />
+                  {errors.linkedInUrl && (
+                    <p className="text-xs text-red-400 mt-1">{errors.linkedInUrl}</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
           {/* Generate Button */}
-          <button
+          <LoadingButton
             onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full mt-6 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isGenerating}
+            className="w-full mt-6 py-3"
+            variant="primary"
           >
-            {isGenerating ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Generating CV...
-              </div>
-            ) : (
-              <div className="flex items-center justify-center">
-                <Github className="w-5 h-5 mr-2" />
-                Generate CV
-              </div>
-            )}
-          </button>
+            <Github className="w-5 h-5 mr-2" />
+            Generate CV
+          </LoadingButton>
         </div>
       </div>
 
@@ -346,66 +407,98 @@ function GenerateTab({ user }: { user: any }) {
 function HistoryTab() {
   const [cvHistory, setCvHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { isDemoMode } = useAuth();
+  const { error: showErrorToast } = useToast();
+
+  const fetchHistory = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      if (isDemoMode) {
+        // Demo mode - show sample history
+        const demoHistory = [
+          {
+            id: 'demo_cv_completed_123',
+            status: 'completed',
+            created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+            completed_at: new Date(Date.now() - 3500000).toISOString(),
+            result_url: '#demo-download',
+            file_size: 187234,
+          },
+          {
+            id: 'demo_cv_failed_456',
+            status: 'failed',
+            created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+            failed_at: new Date(Date.now() - 86300000).toISOString(),
+            error_message: 'Demo: GitHub API rate limit exceeded',
+          },
+          {
+            id: 'demo_cv_processing_789',
+            status: 'processing',
+            created_at: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+            progress: 75,
+          }
+        ];
+        
+        setCvHistory(demoHistory);
+        return;
+      }
+
+      const response = await fetch('/api/cv/history', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('borg_tools_token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCvHistory(data.history || []);
+      } else {
+        const { userMessage } = categorizeError({ status: response.status });
+        throw new Error(userMessage);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch CV history:', error);
+      
+      const { userMessage, isRetryable } = categorizeError(error);
+      setError(userMessage);
+      
+      showErrorToast(
+        'Failed to Load History',
+        isRetryable ? `${userMessage} Please try again.` : userMessage
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        if (isDemoMode) {
-          // Demo mode - show sample history
-          const demoHistory = [
-            {
-              id: 'demo_cv_completed_123',
-              status: 'completed',
-              created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-              completed_at: new Date(Date.now() - 3500000).toISOString(),
-              result_url: '#demo-download',
-              file_size: 187234,
-            },
-            {
-              id: 'demo_cv_failed_456',
-              status: 'failed',
-              created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-              failed_at: new Date(Date.now() - 86300000).toISOString(),
-              error_message: 'Demo: GitHub API rate limit exceeded',
-            },
-            {
-              id: 'demo_cv_processing_789',
-              status: 'processing',
-              created_at: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-              progress: 75,
-            }
-          ];
-          
-          setCvHistory(demoHistory);
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/cv/history', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('borg_tools_token')}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setCvHistory(data.history || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch CV history:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchHistory();
   }, [isDemoMode]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" className="text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium mb-2">Failed to Load History</h3>
+        <p className="text-text-muted mb-4">{error}</p>
+        <LoadingButton
+          onClick={fetchHistory}
+          className="px-6 py-2"
+          variant="primary"
+        >
+          Try Again
+        </LoadingButton>
       </div>
     );
   }
@@ -418,12 +511,13 @@ function HistoryTab() {
         <p className="text-text-muted mb-4">
           Generate your first CV to see it appear here
         </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="btn-primary px-6 py-2"
+        <LoadingButton
+          onClick={fetchHistory}
+          className="px-6 py-2"
+          variant="primary"
         >
           Refresh
-        </button>
+        </LoadingButton>
       </div>
     );
   }

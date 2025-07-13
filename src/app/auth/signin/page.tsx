@@ -1,22 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, ArrowLeft, Play } from 'lucide-react';
+import { Github, ArrowLeft, Play, AlertCircle, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth/auth-context';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/toast';
+import { categorizeError } from '@/lib/network';
+import { LoadingButton } from '@/components/ui/loading';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { loginDemo } = useAuth();
   const router = useRouter();
+  const { error: showErrorToast } = useToast();
 
   const handleGitHubSignIn = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       // Call backend API to get GitHub OAuth URL
       const response = await fetch('/api/auth/github/login');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       if (data.auth_url) {
@@ -25,18 +36,37 @@ export default function SignInPage() {
         // Redirect to GitHub OAuth
         window.location.href = data.auth_url;
       } else {
-        throw new Error('Failed to get authorization URL');
+        throw new Error('Invalid response: missing authorization URL');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('GitHub sign-in error:', error);
+      
+      const { type, userMessage, isRetryable } = categorizeError(error);
+      
+      setError(userMessage);
       setIsLoading(false);
-      // TODO: Show error toast/message
+      
+      // Show toast notification for better UX
+      showErrorToast(
+        'Sign-in Failed',
+        isRetryable ? `${userMessage} Please try again.` : userMessage
+      );
     }
   };
 
   const handleDemoLogin = () => {
-    loginDemo();
-    router.push('/dashboard');
+    try {
+      loginDemo();
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      showErrorToast('Demo Failed', 'Unable to start demo mode. Please refresh and try again.');
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    handleGitHubSignIn();
   };
 
   return (
@@ -67,24 +97,37 @@ export default function SignInPage() {
             </p>
           </div>
 
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-red-400">{error}</p>
+                  {categorizeError({ message: error }).isRetryable && (
+                    <button
+                      onClick={handleRetry}
+                      className="mt-2 text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Try again
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* GitHub OAuth button */}
-          <button
+          <LoadingButton
             onClick={handleGitHubSignIn}
-            disabled={isLoading}
-            className="w-full btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isLoading}
+            className="w-full py-4 text-lg"
+            variant="primary"
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Connecting...
-              </div>
-            ) : (
-              <div className="flex items-center justify-center">
-                <Github className="w-5 h-5 mr-2" />
-                Continue with GitHub
-              </div>
-            )}
-          </button>
+            <Github className="w-5 h-5 mr-2" />
+            Continue with GitHub
+          </LoadingButton>
 
           {/* Demo Mode Button */}
           <div className="mt-4 pt-4 border-t border-border">
