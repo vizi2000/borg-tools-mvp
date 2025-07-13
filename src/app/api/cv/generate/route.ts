@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verify } from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { createGitHubProcessor, GitHubApiError } from '@/lib/github-service';
+import { createCVContentGenerator } from '@/lib/ai-agents';
 import { categorizeError } from '@/lib/network';
 
 interface JWTPayload {
@@ -33,6 +34,7 @@ interface CVGenerationJob {
   options: any;
   result?: {
     githubData?: any;
+    cvContent?: any;
     pdfUrl?: string;
     fileSize?: number;
   };
@@ -216,13 +218,15 @@ async function processCV(jobId: string, githubToken: string, username: string, o
     job.progress = 65;
     jobs.set(jobId, job);
 
-    // In a real implementation, this is where you would:
-    // 1. Send data to AI agents (Claude, GPT) for processing
-    // 2. Generate professional summaries and descriptions
-    // 3. Parse LinkedIn data if provided
-    // 4. Create structured CV data
+    // Initialize AI content generator
+    const contentGenerator = createCVContentGenerator();
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Generate AI-powered CV content
+    console.log(`🤖 Starting AI content generation for job ${jobId}`);
+    const cvContent = await contentGenerator.generateCVContent(githubData, options.targetRole);
+    
+    console.log(`✅ AI content generation completed for job ${jobId}`);
+    console.log('📊 Usage stats:', contentGenerator.getUsageStats());
 
     job.currentStep = 'rendering_pdf';
     job.progress = 85;
@@ -248,6 +252,7 @@ async function processCV(jobId: string, githubToken: string, username: string, o
     job.completedAt = new Date().toISOString();
     job.result = {
       githubData,
+      cvContent,
       pdfUrl: `#generated-cv-${jobId}`, // Mock URL - would be real storage URL
       fileSize: Math.floor(180000 + Math.random() * 100000), // Mock file size 180-280KB
     };

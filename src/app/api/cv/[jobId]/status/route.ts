@@ -113,6 +113,17 @@ export async function GET(request: NextRequest, { params }: CVStatusRouteProps) 
           totalStars: job.result.githubData.repositories.totalStars,
         };
       }
+      
+      // Include CV content summary for debugging (remove in production)
+      if (process.env.NODE_ENV === 'development' && job.result.cvContent) {
+        response.cv_content_summary = {
+          summary_length: job.result.cvContent.professionalSummary.length,
+          skills_count: job.result.cvContent.technicalSkills.programming.length,
+          projects_count: job.result.cvContent.projects.length,
+          keywords_count: job.result.cvContent.keywords.length,
+          years_experience: job.result.cvContent.experience.yearsOfExperience,
+        };
+      }
     }
 
     return NextResponse.json(response);
