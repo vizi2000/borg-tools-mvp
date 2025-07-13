@@ -4,23 +4,38 @@
 
 Borg-Tools MVP uses LangGraph for orchestrating AI agents that transform GitHub/LinkedIn data into professional CVs. The system follows a multi-agent pipeline with specialized responsibilities.
 
+## 🔄 Current Status: Authentication Complete, Agents Ready for Integration
+
+**Authentication System**: ✅ Complete GitHub OAuth implementation provides secure user data access
+**Next Phase**: AI agents integration with authenticated GitHub API access
+
 ## Architecture Flow
 
 ```mermaid
 graph TD
-    A[Input: GitHub/LinkedIn Data] --> B[Data Extractor Agent]
-    B --> C[Summary Generator Agent]
-    C --> D[PDF Renderer Agent]
-    D --> E[Storage Uploader Agent]
-    E --> F[Output: CV PDF + Share Link]
+    A[GitHub OAuth Login] --> B[Authenticated GitHub API Access]
+    B --> C[Data Extractor Agent]
+    C --> D[Summary Generator Agent]
+    D --> E[PDF Renderer Agent]
+    E --> F[Storage Uploader Agent]
+    F --> G[Output: CV PDF + Share Link]
     
-    subgraph "AI Models"
-        G[Claude 3 Haiku - Fast Extraction]
-        H[GPT-4o - Quality Summaries]
+    subgraph "Authentication Layer ✅"
+        H[JWT Token Management]
+        I[OAuth State Validation]
+        J[Secure Session Storage]
     end
     
-    B --> G
-    C --> H
+    subgraph "AI Models (Ready for Integration)"
+        K[Claude 3 Haiku - Fast Extraction]
+        L[GPT-4o - Quality Summaries]
+        M[Kimi-Dev-72B - Code Analysis]
+    end
+    
+    A --> H
+    C --> K
+    D --> L
+    C --> M
 ```
 
 ## Agent Definitions
