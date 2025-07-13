@@ -124,7 +124,14 @@ export async function POST(request: NextRequest) {
     // For now, we'll just create a JWT token
 
     // Create JWT token
-    const jwtSecret = process.env.SECRET_KEY || 'your_jwt_secret_key';
+    const jwtSecret = process.env.SECRET_KEY;
+    if (!jwtSecret) {
+      console.error('JWT secret not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
     const token = sign(
       {
         user_id: user.id,

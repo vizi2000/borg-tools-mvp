@@ -21,7 +21,14 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.SECRET_KEY || 'your_jwt_secret_key';
+    const jwtSecret = process.env.SECRET_KEY;
+    if (!jwtSecret) {
+      console.error('JWT secret not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
 
     let decoded: JWTPayload;
     try {
