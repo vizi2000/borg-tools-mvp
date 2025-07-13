@@ -20,6 +20,7 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   loginDemo: () => void;
+  loginWithGitHub: (userData: User, token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   };
 
+  const loginWithGitHub = (userData: User, token: string) => {
+    localStorage.setItem('borg_tools_token', token);
+    localStorage.removeItem('demo_mode'); // Clear demo mode
+    setUser(userData);
+    setIsDemoMode(false);
+    setIsLoading(false);
+  };
+
   const refreshUser = async () => {
     // Check for demo mode first
     const isDemoModeStored = localStorage.getItem('demo_mode') === 'true';
@@ -74,15 +83,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      // Use backend JWT verification
+      const response = await fetch('http://localhost:8000/api/v1/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+        const data = await response.json();
+        if (data.user) {
+          const user = {
+            id: data.user.sub,
+            username: data.user.login,
+            name: data.user.name,
+            email: data.user.email,
+          };
+          setUser(user);
+          setIsDemoMode(false);
+        }
       } else if (response.status === 401) {
         // Token is invalid/expired, remove it silently
         localStorage.removeItem('borg_tools_token');
@@ -121,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshUser,
     loginDemo,
+    loginWithGitHub,
   };
 
   return (

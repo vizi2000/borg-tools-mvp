@@ -1,6 +1,8 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth-context';
+import { useTheme } from '@/components/theme/theme-context';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { 
@@ -21,6 +23,7 @@ import { LoadingButton, LoadingSpinner } from '@/components/ui/loading';
 
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated, logout, isDemoMode } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'generate' | 'history'>('generate');
 
@@ -43,9 +46,20 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen transition-all duration-300 ${
+      theme === 'liquid-glass' 
+        ? 'page-background' 
+        : 'bg-background'
+    }`}>
+      {theme === 'liquid-glass' && (
+        <div className="page-overlay fixed inset-0 pointer-events-none" />
+      )}
       {/* Header */}
-      <header className="border-b border-border">
+      <header className={`border-b transition-all duration-300 ${
+        theme === 'liquid-glass' 
+          ? 'glass-card border-theme-primary backdrop-filter backdrop-blur-xl' 
+          : 'border-border'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -55,6 +69,7 @@ export default function DashboardPage() {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <div className="flex items-center space-x-3">
                 {user.avatar_url && (
                   <img 
@@ -150,6 +165,7 @@ function GenerateTab({ user }: { user: any }) {
     theme: 'neon-tech'
   });
   const { isDemoMode } = useAuth();
+  const { theme } = useTheme();
   const { error: showErrorToast, success: showSuccessToast } = useToast();
 
   const validateForm = () => {
@@ -235,7 +251,11 @@ function GenerateTab({ user }: { user: any }) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Generation Form */}
       <div className="space-y-6">
-        <div className="bg-background-card border border-border rounded-lg p-6">
+        <div className={`transition-all duration-300 rounded-lg p-6 ${
+          theme === 'liquid-glass'
+            ? 'glass-card'
+            : 'bg-background-card border border-border'
+        }`}>
           <h2 className="text-lg font-semibold mb-4">CV Generation Options</h2>
           
           <div className="space-y-4">
@@ -356,7 +376,11 @@ function GenerateTab({ user }: { user: any }) {
 
       {/* GitHub Profile Preview */}
       <div className="space-y-6">
-        <div className="bg-background-card border border-border rounded-lg p-6">
+        <div className={`transition-all duration-300 rounded-lg p-6 ${
+          theme === 'liquid-glass'
+            ? 'glass-card'
+            : 'bg-background-card border border-border'
+        }`}>
           <h2 className="text-lg font-semibold mb-4">Your GitHub Profile</h2>
           
           <div className="flex items-start space-x-4">
@@ -390,7 +414,11 @@ function GenerateTab({ user }: { user: any }) {
         </div>
 
         {/* Quick Tips */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+        <div className={`transition-all duration-300 rounded-lg p-4 ${
+          theme === 'liquid-glass'
+            ? 'glass-card border-theme-accent'
+            : 'bg-primary/5 border border-primary/20'
+        }`}>
           <h3 className="text-sm font-semibold text-primary mb-2">💡 Pro Tips</h3>
           <ul className="text-xs text-text space-y-1">
             <li>• Add detailed README files to showcase your projects</li>
@@ -409,6 +437,7 @@ function HistoryTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isDemoMode } = useAuth();
+  const { theme } = useTheme();
   const { error: showErrorToast } = useToast();
 
   const fetchHistory = async () => {
@@ -525,7 +554,11 @@ function HistoryTab() {
   return (
     <div className="space-y-4">
       {cvHistory.map((cv) => (
-        <div key={cv.id} className="bg-background-card border border-border rounded-lg p-6">
+        <div key={cv.id} className={`transition-all duration-300 rounded-lg p-6 ${
+          theme === 'liquid-glass'
+            ? 'glass-card'
+            : 'bg-background-card border border-border'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {/* Status Icon */}

@@ -64,7 +64,7 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
           return;
         }
 
-        const response = await fetch(`/api/cv/${params.jobId}/status`, {
+        const response = await fetch(`/api/cv/status/${params.jobId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('borg_tools_token')}`,
           },
@@ -242,7 +242,7 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
               <div className="w-full bg-background border border-border rounded-full h-3 mb-6">
                 <div 
                   className="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${job.progress}%` }}
+                  style={{ width: `${job?.progress ?? 0}%` }}
                 ></div>
               </div>
             )}
@@ -250,7 +250,7 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
             {/* Current Step */}
             {job?.status === 'processing' && job.current_step && (
               <p className="text-sm text-text-muted mb-6">
-                Current step: {job.current_step.replace(/_/g, ' ')}
+                Current step: {job?.current_step?.replace(/_/g, ' ') || 'Unknown'}
               </p>
             )}
 
@@ -322,12 +322,12 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-text-muted">Job ID:</span>
-                  <span className="font-mono">{job.id.slice(-12)}</span>
+                  <span className="font-mono">{job?.id?.slice(-12) || 'N/A'}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-text-muted">Created:</span>
-                  <span>{new Date(job.created_at).toLocaleString()}</span>
+                  <span>{job?.created_at ? new Date(job.created_at).toLocaleString() : 'N/A'}</span>
                 </div>
                 
                 {job.completed_at && (
@@ -346,7 +346,7 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
                 
                 <div className="flex justify-between">
                   <span className="text-text-muted">Progress:</span>
-                  <span>{job.progress}%</span>
+                  <span>{job?.progress ?? 0}%</span>
                 </div>
               </div>
             </div>
@@ -399,32 +399,32 @@ export default function CVStatusPage({ params }: CVStatusPageProps) {
                 icon={<Github className="w-5 h-5" />}
                 title="Fetching GitHub Data"
                 description="Analyzing repositories, commits, and profile information"
-                completed={job.progress > 20}
-                active={job.current_step === 'fetching_github_data'}
+                completed={(job?.progress ?? 0) > 20}
+                active={job?.current_step === 'fetching_github_data'}
               />
               
               <ProcessStep 
                 icon={<Brain className="w-5 h-5" />}
                 title="AI Analysis"
                 description="Extracting technical skills and project insights"
-                completed={job.progress > 50}
-                active={job.current_step === 'extracting_data'}
+                completed={(job?.progress ?? 0) > 50}
+                active={job?.current_step === 'extracting_data'}
               />
               
               <ProcessStep 
                 icon={<FileText className="w-5 h-5" />}
                 title="Content Generation"
                 description="Creating professional summaries and descriptions"
-                completed={job.progress > 80}
-                active={job.current_step === 'generating_summaries'}
+                completed={(job?.progress ?? 0) > 80}
+                active={job?.current_step === 'generating_summaries'}
               />
               
               <ProcessStep 
                 icon={<Upload className="w-5 h-5" />}
                 title="PDF Creation"
                 description="Rendering final CV and uploading to storage"
-                completed={job.progress === 100}
-                active={job.current_step === 'rendering_pdf'}
+                completed={(job?.progress ?? 0) === 100}
+                active={job?.current_step === 'rendering_pdf'}
               />
             </div>
           </div>

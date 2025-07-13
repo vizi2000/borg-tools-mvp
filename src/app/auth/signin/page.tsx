@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Github, ArrowLeft, Play, AlertCircle, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth/auth-context';
+import { useTheme } from '@/components/theme/theme-context';
+import { ThemeToggleCompact } from '@/components/theme/theme-toggle';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/toast';
 import { categorizeError } from '@/lib/network';
@@ -13,6 +15,7 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { loginDemo } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
   const { error: showErrorToast } = useToast();
 
@@ -21,23 +24,20 @@ export default function SignInPage() {
     setError(null);
     
     try {
-      // Call backend API to get GitHub OAuth URL
-      const response = await fetch('/api/auth/github/login');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Get GitHub OAuth authorization URL
+      const authResponse = await fetch('http://localhost:8000/api/v1/auth/github/authorize');
+      if (!authResponse.ok) {
+        throw new Error('Failed to get GitHub authorization URL');
       }
       
-      const data = await response.json();
+      const { auth_url, state } = await authResponse.json();
       
-      if (data.auth_url) {
-        // Store state for CSRF protection
-        localStorage.setItem('oauth_state', data.state);
-        // Redirect to GitHub OAuth
-        window.location.href = data.auth_url;
-      } else {
-        throw new Error('Invalid response: missing authorization URL');
-      }
+      // Store state for CSRF protection
+      localStorage.setItem('github_oauth_state', state);
+      
+      // Redirect to GitHub OAuth
+      window.location.href = auth_url;
+      
     } catch (error: any) {
       console.error('GitHub sign-in error:', error);
       
@@ -70,11 +70,23 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className={`min-h-screen flex items-center justify-center px-4 transition-all duration-300 ${
+      theme === 'liquid-glass' 
+        ? 'page-background relative'
+        : 'bg-background'
+    }`}>
       {/* Background pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+      {theme === 'liquid-glass' ? (
+        <div className="page-overlay absolute inset-0 pointer-events-none" />
+      ) : (
+        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+      )}
       
       <div className="relative w-full max-w-md">
+        {/* Theme Toggle */}
+        <div className="absolute top-0 right-0 -mt-16">
+          <ThemeToggleCompact />
+        </div>
         {/* Back to home link */}
         <Link 
           href="/" 
@@ -85,7 +97,11 @@ export default function SignInPage() {
         </Link>
 
         {/* Sign in card */}
-        <div className="bg-background-card border border-border rounded-lg p-8 shadow-lg">
+        <div className={`transition-all duration-300 rounded-lg p-8 ${
+          theme === 'liquid-glass'
+            ? 'glass-card shadow-glass animate-float'
+            : 'bg-background-card border border-border shadow-lg'
+        }`}>
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -46,15 +46,16 @@ export interface OpenRouterError {
   };
 }
 
-// Available free models on OpenRouter (as of July 2025)
+// Available free models on OpenRouter (verified working July 2025)
 export const FREE_MODELS = {
-  MISTRAL_SMALL: 'mistralai/mistral-small:free',
-  OPTIMUS_ALPHA: 'openrouter/optimus-alpha:free',
-  CYPHER_ALPHA: 'openrouter/cypher-alpha:free',
-  LLAMA_MAVERICK: 'meta-llama/llama-4-maverick:free',
-  SCOUT: 'anthropic/scout:free',
-  DEEPSEEK_V3: 'deepseek/deepseek-v3-base:free',
-  QWEN_VL: 'qwen/qwen2.5-vl-72b-instruct:free',
+  CYPHER_ALPHA: 'openrouter/cypher-alpha:free',        // ✅ Working - good for creative content
+  DEEPSEEK_V3: 'deepseek/deepseek-v3-base:free',      // ✅ Working - good for technical content
+  QWEN_VL: 'qwen/qwen2.5-vl-72b-instruct:free',       // ✅ Working - multimodal but works for text
+  // Legacy models (may be unavailable)
+  MISTRAL_SMALL: 'mistralai/mistral-small:free',      // ❌ Not available
+  OPTIMUS_ALPHA: 'openrouter/optimus-alpha:free',     // ❌ Not available
+  LLAMA_MAVERICK: 'meta-llama/llama-4-maverick:free', // ❌ Not available
+  SCOUT: 'anthropic/scout:free',                       // ❌ Not available
 } as const;
 
 export class OpenRouterClient {
@@ -63,7 +64,7 @@ export class OpenRouterClient {
   constructor(config: OpenRouterConfig) {
     this.config = {
       baseUrl: 'https://openrouter.ai/api/v1',
-      defaultModel: FREE_MODELS.MISTRAL_SMALL,
+      defaultModel: FREE_MODELS.CYPHER_ALPHA, // Use working model as default
       timeout: 30000,
       ...config,
     };
@@ -236,34 +237,33 @@ export function createOpenRouterClient(): OpenRouterClient {
 
   return new OpenRouterClient({
     apiKey,
-    defaultModel: FREE_MODELS.MISTRAL_SMALL,
+    defaultModel: FREE_MODELS.CYPHER_ALPHA, // Use working model
   });
 }
 
-// Utility functions for model selection
+// Utility functions for model selection (using verified working models)
 export function getOptimalModelForTask(task: 'summary' | 'experience' | 'projects' | 'skills' | 'ats'): string {
   switch (task) {
     case 'summary':
-      return FREE_MODELS.MISTRAL_SMALL; // Best for professional writing
+      return FREE_MODELS.DEEPSEEK_V3; // Best available for professional writing
     case 'experience':
-      return FREE_MODELS.OPTIMUS_ALPHA; // Optimized instruction following
+      return FREE_MODELS.CYPHER_ALPHA; // Good for instruction following and creative content
     case 'projects':
       return FREE_MODELS.CYPHER_ALPHA; // Good for creative descriptions
     case 'skills':
-      return FREE_MODELS.MISTRAL_SMALL; // Structured output
+      return FREE_MODELS.DEEPSEEK_V3; // Good for structured/technical content
     case 'ats':
-      return FREE_MODELS.OPTIMUS_ALPHA; // Keyword optimization
+      return FREE_MODELS.QWEN_VL; // Good for optimization tasks
     default:
-      return FREE_MODELS.MISTRAL_SMALL;
+      return FREE_MODELS.CYPHER_ALPHA; // Most versatile working model
   }
 }
 
 export function getFallbackModels(): string[] {
   return [
-    FREE_MODELS.MISTRAL_SMALL,
-    FREE_MODELS.OPTIMUS_ALPHA,
-    FREE_MODELS.CYPHER_ALPHA,
-    FREE_MODELS.DEEPSEEK_V3,
+    FREE_MODELS.CYPHER_ALPHA,  // Most versatile working model
+    FREE_MODELS.DEEPSEEK_V3,   // Good for technical content
+    FREE_MODELS.QWEN_VL,       // Multimodal but works for text
   ];
 }
 

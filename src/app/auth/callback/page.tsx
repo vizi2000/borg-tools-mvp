@@ -33,13 +33,13 @@ export default function AuthCallbackPage() {
         }
 
         // Validate CSRF state
-        const storedState = localStorage.getItem('oauth_state');
+        const storedState = localStorage.getItem('github_oauth_state');
         if (state !== storedState) {
           throw new Error('Invalid state parameter');
         }
 
         // Exchange code for token
-        const response = await fetch('/api/auth/github/callback', {
+        const response = await fetch('http://localhost:8000/api/v1/auth/github/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ export default function AuthCallbackPage() {
           setState('success');
           
           // Clean up OAuth state
-          localStorage.removeItem('oauth_state');
+          localStorage.removeItem('github_oauth_state');
           
           // Redirect to dashboard after 2 seconds
           setTimeout(() => {
@@ -76,7 +76,7 @@ export default function AuthCallbackPage() {
         setState('error');
         
         // Clean up OAuth state
-        localStorage.removeItem('oauth_state');
+        localStorage.removeItem('github_oauth_state');
       }
     };
 

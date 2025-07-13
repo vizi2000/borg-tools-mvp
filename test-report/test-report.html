@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borg-Tools MVP - Comprehensive Test Report</title>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #262626;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-neon: #39ff14;
+            --accent-error: #ff3939;
+            --accent-warning: #ff9514;
+            --accent-info: #1439ff;
+            --shadow-neon: 0 0 20px rgba(57, 255, 20, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(57, 255, 20, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-neon) 0%, #14ff8f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: var(--shadow-neon);
+        }
+        
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .summary-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-neon);
+            box-shadow: var(--shadow-neon);
+        }
+        
+        .summary-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-neon);
+        }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .severity-critical {
+            background: var(--accent-error);
+            color: white;
+        }
+        
+        .severity-high {
+            background: var(--accent-warning);
+            color: white;
+        }
+        
+        .severity-medium {
+            background: #ffd814;
+            color: var(--bg-primary);
+        }
+        
+        .severity-low {
+            background: var(--accent-info);
+            color: white;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--bg-tertiary);
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--accent-neon);
+        }
+        
+        .bug-card {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bug-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-error);
+        }
+        
+        .bug-card.severity-critical::before { background: var(--accent-error); }
+        .bug-card.severity-high::before { background: var(--accent-warning); }
+        .bug-card.severity-medium::before { background: #ffd814; }
+        .bug-card.severity-low::before { background: var(--accent-info); }
+        
+        .bug-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .bug-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .bug-meta {
+            display: flex;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .bug-description {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+        
+        .bug-details {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .bug-details h4 {
+            color: var(--accent-neon);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        
+        .bug-steps {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        
+        .bug-steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .bug-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: var(--accent-neon);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .screenshot-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .screenshot-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .screenshot-card:hover {
+            transform: scale(1.02);
+            border-color: var(--accent-neon);
+        }
+        
+        .screenshot-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .screenshot-info {
+            padding: 1rem;
+        }
+        
+        .screenshot-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .screenshot-meta {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .performance-chart {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric-bar {
+            margin-bottom: 1rem;
+        }
+        
+        .metric-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .metric-progress {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .metric-fill {
+            height: 100%;
+            background: var(--accent-neon);
+            transition: width 0.5s ease;
+        }
+        
+        .recommendations {
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.1) 0%, rgba(20, 255, 143, 0.1) 100%);
+            border: 1px solid var(--accent-neon);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .recommendations h3 {
+            color: var(--accent-neon);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .recommendations ul {
+            list-style: none;
+        }
+        
+        .recommendations li {
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .recommendations li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-neon);
+            font-weight: 700;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+            border-top: 1px solid var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+        }
+        
+        .modal-content {
+            margin: 5% auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+        }
+        
+        .close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            color: var(--text-primary);
+            font-size: 2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Borg-Tools MVP Test Report</h1>
+            <p class="subtitle">Comprehensive E2E Testing Results - 7/13/2025, 11:12:34 AM</p>
+        </header>
+        
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>Total Bugs Found</h3>
+                <div class="value">1</div>
+            </div>
+            <div class="summary-card">
+                <h3>Critical Issues</h3>
+                <div class="value" style="color: var(--accent-error)">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>High Priority</h3>
+                <div class="value" style="color: var(--accent-warning)">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Screenshots Captured</h3>
+                <div class="value">4</div>
+            </div>
+        </div>
+        
+        <section class="section">
+            <div class="section-header">
+                <h2>🐛 Bugs & Issues</h2>
+                <div>
+                    <span class="severity-badge severity-critical">0 Critical</span>
+                    <span class="severity-badge severity-high">0 High</span>
+                    <span class="severity-badge severity-medium">1 Medium</span>
+                    <span class="severity-badge severity-low">0 Low</span>
+                </div>
+            </div>
+            
+            
+                <div class="bug-card severity-medium">
+                    <div class="bug-header">
+                        <h3 class="bug-title">4 potential color contrast issues</h3>
+                        <span class="severity-badge severity-medium">medium</span>
+                    </div>
+                    
+                    <div class="bug-meta">
+                        <span>🏷️ Accessibility</span>
+                        <span>🕐 11:12:34 AM</span>
+                        
+                    </div>
+                    
+                    <div class="bug-details">
+                        <h4>Steps to Reproduce</h4>
+                        <ol class="bug-steps">
+                            <li>Performed basic color contrast analysis</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="bug-details">
+                        <h4>Expected vs Actual</h4>
+                        <p><strong>Expected:</strong> Text should have sufficient contrast with background</p>
+                        <p><strong>Actual:</strong> 4 elements with potential contrast issues</p>
+                    </div>
+                    
+                    <div class="bug-details" style="background: rgba(57, 255, 20, 0.1); border: 1px solid var(--accent-neon);">
+                        <h4>💡 Recommendation</h4>
+                        <p>Review color scheme for WCAG 2.1 AA compliance</p>
+                    </div>
+                    
+                    
+                        <div style="margin-top: 1rem;">
+                            <img src="screenshots/simple-test-3-bug-BUG-1752397954328-dd7z7spp9.png" 
+                                 alt="Bug screenshot" 
+                                 style="max-width: 100%; border-radius: 6px; cursor: pointer;"
+                                 onclick="openModal(this.src)">
+                        </div>
+                    
+                </div>
+            
+        </section>
+        
+        <section class="section">
+            <div class="section-header">
+                <h2>📸 Screenshots</h2>
+            </div>
+            
+            <div class="screenshot-gallery">
+                
+                    <div class="screenshot-card">
+                        <img src="screenshots/simple-test-0-landing-page-initial.png" 
+                             alt="landing-page-initial"
+                             onclick="openModal(this.src)">
+                        <div class="screenshot-info">
+                            <div class="screenshot-title">landing-page-initial</div>
+                            <div class="screenshot-meta">11:12:30 AM</div>
+                        </div>
+                    </div>
+                
+                    <div class="screenshot-card">
+                        <img src="screenshots/simple-test-1-landing-page-mobile.png" 
+                             alt="landing-page-mobile"
+                             onclick="openModal(this.src)">
+                        <div class="screenshot-info">
+                            <div class="screenshot-title">landing-page-mobile</div>
+                            <div class="screenshot-meta">11:12:31 AM</div>
+                        </div>
+                    </div>
+                
+                    <div class="screenshot-card">
+                        <img src="screenshots/simple-test-2-navigation-test.png" 
+                             alt="navigation-test"
+                             onclick="openModal(this.src)">
+                        <div class="screenshot-info">
+                            <div class="screenshot-title">navigation-test</div>
+                            <div class="screenshot-meta">11:12:33 AM</div>
+                        </div>
+                    </div>
+                
+                    <div class="screenshot-card">
+                        <img src="screenshots/simple-test-3-bug-BUG-1752397954328-dd7z7spp9.png" 
+                             alt="bug-BUG-1752397954328-dd7z7spp9"
+                             onclick="openModal(this.src)">
+                        <div class="screenshot-info">
+                            <div class="screenshot-title">bug-BUG-1752397954328-dd7z7spp9</div>
+                            <div class="screenshot-meta">11:12:34 AM</div>
+                        </div>
+                    </div>
+                
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="section-header">
+                <h2>⚡ Performance Metrics</h2>
+            </div>
+            
+            
+        </section>
+        
+        <section class="recommendations">
+            <h3>🚀 Key Recommendations for Product Team</h3>
+            <ul>
+                <li>♿ Improve accessibility - ensure WCAG 2.1 AA compliance for better user reach</li><li>💼 Add analytics tracking to understand user behavior and conversion funnel</li><li>🔄 Implement A/B testing framework for data-driven feature decisions</li><li>💰 Consider freemium model with premium features (custom templates, API access)</li><li>🌍 Add internationalization support to expand to global markets</li><li>🤝 Build integration marketplace for third-party services (Slack, Teams, etc.)</li>
+            </ul>
+        </section>
+        
+        <div class="footer">
+            <p>Generated by Borg-Tools Automated Testing Suite</p>
+            <p>Test Duration: 4s</p>
+        </div>
+    </div>
+    
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+    
+    <script>
+        function openModal(src) {
+            document.getElementById('imageModal').style.display = 'block';
+            document.getElementById('modalImage').src = src;
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+        
+        // Animate metrics on load
+        window.addEventListener('load', () => {
+            const fills = document.querySelectorAll('.metric-fill');
+            fills.forEach((fill, index) => {
+                setTimeout(() => {
+                    fill.style.width = fill.style.width;
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
+  

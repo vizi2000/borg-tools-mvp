@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-07-13T09:12:34.776Z",
+  "summary": {
+    "totalBugs": 1,
+    "criticalBugs": 0,
+    "highBugs": 0,
+    "mediumBugs": 1,
+    "lowBugs": 0,
+    "totalScreenshots": 4,
+    "performanceMetrics": 0
+  },
+  "bugs": [
+    {
+      "severity": "medium",
+      "type": "Accessibility",
+      "description": "4 potential color contrast issues",
+      "steps": [
+        "Performed basic color contrast analysis"
+      ],
+      "expectedBehavior": "Text should have sufficient contrast with background",
+      "actualBehavior": "4 elements with potential contrast issues",
+      "recommendation": "Review color scheme for WCAG 2.1 AA compliance",
+      "id": "BUG-1752397954328-dd7z7spp9",
+      "timestamp": "2025-07-13T09:12:34.559Z",
+      "screenshot": "/Users/wojciechwiesner/ai/borg-tools-mvp/test-report/screenshots/simple-test-3-bug-BUG-1752397954328-dd7z7spp9.png"
+    }
+  ],
+  "bugsByType": {
+    "Accessibility": 1
+  },
+  "screenshots": [
+    {
+      "id": "simple-test-0-landing-page-initial",
+      "testName": "simple-test",
+      "stepName": "landing-page-initial",
+      "path": "simple-test-0-landing-page-initial.png",
+      "timestamp": "2025-07-13T09:12:30.596Z"
+    },
+    {
+      "id": "simple-test-1-landing-page-mobile",
+      "testName": "simple-test",
+      "stepName": "landing-page-mobile",
+      "path": "simple-test-1-landing-page-mobile.png",
+      "timestamp": "2025-07-13T09:12:31.367Z"
+    },
+    {
+      "id": "simple-test-2-navigation-test",
+      "testName": "simple-test",
+      "stepName": "navigation-test",
+      "path": "simple-test-2-navigation-test.png",
+      "timestamp": "2025-07-13T09:12:33.534Z"
+    },
+    {
+      "id": "simple-test-3-bug-BUG-1752397954328-dd7z7spp9",
+      "testName": "simple-test",
+      "stepName": "bug-BUG-1752397954328-dd7z7spp9",
+      "path": "simple-test-3-bug-BUG-1752397954328-dd7z7spp9.png",
+      "timestamp": "2025-07-13T09:12:34.559Z"
+    }
+  ],
+  "performanceMetrics": [],
+  "recommendations": [
+    "♿ Improve accessibility - ensure WCAG 2.1 AA compliance for better user reach",
+    "💼 Add analytics tracking to understand user behavior and conversion funnel",
+    "🔄 Implement A/B testing framework for data-driven feature decisions",
+    "💰 Consider freemium model with premium features (custom templates, API access)",
+    "🌍 Add internationalization support to expand to global markets",
+    "🤝 Build integration marketplace for third-party services (Slack, Teams, etc.)"
+  ]
+}

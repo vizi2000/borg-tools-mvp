@@ -8,6 +8,7 @@ import superjson from 'superjson';
 import { AuthProvider } from '@/components/auth/auth-context';
 import { ToastProvider } from '@/components/ui/toast';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { ThemeProvider } from '@/components/theme/theme-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -48,15 +49,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <AuthProvider>
-          <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            <QueryClientProvider client={queryClient}>
-              {children}
-            </QueryClientProvider>
-          </trpc.Provider>
-        </AuthProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <trpc.Provider client={trpcClient} queryClient={queryClient}>
+              <QueryClientProvider client={queryClient}>
+                {children}
+              </QueryClientProvider>
+            </trpc.Provider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

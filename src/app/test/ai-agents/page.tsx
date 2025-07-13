@@ -32,7 +32,9 @@ export default function AIAgentsTestPage() {
 
     try {
       if (testType === 'openrouter') {
-        const testResults = await runOpenRouterTests();
+        // Call API route for OpenRouter tests (server-side where env vars are accessible)
+        const response = await fetch('/api/test/openrouter');
+        const testResults = await response.json();
         setOpenRouterResults(testResults);
       } else {
         const testResults = await runAIAgentsTests();

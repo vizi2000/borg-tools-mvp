@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Borg-Tools API"
     
     # Security
-    SECRET_KEY: str = Field(..., description="Secret key for JWT tokens")
+    SECRET_KEY: str = Field(default="dev-secret-key-change-in-production", description="Secret key for JWT tokens")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
@@ -32,23 +32,23 @@ class Settings(BaseSettings):
         default=["localhost", "127.0.0.1", "0.0.0.0"]
     )
     
-    # Database
-    DATABASE_URL: str = Field(..., description="PostgreSQL database URL")
+    # Database (optional for basic auth testing)
+    DATABASE_URL: Optional[str] = Field(default=None, description="PostgreSQL database URL")
     
     # Redis
     REDIS_URL: str = Field(default="redis://localhost:6379")
     
     # GitHub OAuth
-    GITHUB_CLIENT_ID: str = Field(..., description="GitHub OAuth client ID")
-    GITHUB_CLIENT_SECRET: str = Field(..., description="GitHub OAuth client secret")
+    GITHUB_CLIENT_ID: Optional[str] = Field(default=None, description="GitHub OAuth client ID")
+    GITHUB_CLIENT_SECRET: Optional[str] = Field(default=None, description="GitHub OAuth client secret")
     
-    # AI APIs
-    ANTHROPIC_API_KEY: str = Field(..., description="Anthropic API key")
-    OPENAI_API_KEY: str = Field(..., description="OpenAI API key")
+    # AI APIs (optional for basic testing)
+    ANTHROPIC_API_KEY: Optional[str] = Field(default=None, description="Anthropic API key")
+    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key")
     
-    # Supabase
-    SUPABASE_URL: str = Field(..., description="Supabase project URL")
-    SUPABASE_SERVICE_ROLE_KEY: str = Field(..., description="Supabase service role key")
+    # Supabase (optional for basic testing)
+    SUPABASE_URL: Optional[str] = Field(default=None, description="Supabase project URL")
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = Field(default=None, description="Supabase service role key")
     SUPABASE_BUCKET_NAME: str = Field(default="cv-pdfs")
     
     # Monitoring

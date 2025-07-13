@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Visual Test Report</title>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-success: #39ff14;
+            --accent-error: #ff3939;
+            --accent-warning: #ff9514;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .header { text-align: center; margin-bottom: 3rem; }
+        .header h1 { font-size: 3rem; margin-bottom: 1rem; color: var(--accent-success); }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
+        .summary-card { 
+            background: var(--bg-secondary); 
+            padding: 1.5rem; 
+            border-radius: 8px; 
+            text-align: center;
+            border: 1px solid rgba(57, 255, 20, 0.3);
+        }
+        .summary-card h3 { color: var(--accent-success); margin-bottom: 0.5rem; }
+        .summary-card .value { font-size: 2rem; font-weight: bold; }
+        
+        .test-step {
+            background: var(--bg-secondary);
+            margin: 2rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        
+        .step-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, #262626 100%);
+            border-bottom: 1px solid #333;
+        }
+        
+        .step-title { 
+            font-size: 1.5rem; 
+            margin-bottom: 0.5rem; 
+            color: var(--accent-success);
+        }
+        
+        .step-meta {
+            display: flex;
+            gap: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .step-content { padding: 1.5rem; }
+        
+        .screenshot-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .screenshot {
+            max-width: 100%;
+            border: 1px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .elements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .element-card {
+            background: #262626;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #444;
+        }
+        
+        .element-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .element-type {
+            background: var(--accent-success);
+            color: #000;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .confidence-bar {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-left: 1rem;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: var(--accent-success);
+            transition: width 0.3s ease;
+        }
+        
+        .result-success { color: var(--accent-success); }
+        .result-failure { color: var(--accent-error); }
+        .result-warning { color: var(--accent-warning); }
+        
+        .errors { 
+            background: rgba(255, 57, 57, 0.1); 
+            border: 1px solid var(--accent-error);
+            padding: 1rem; 
+            border-radius: 6px; 
+            margin-top: 1rem; 
+        }
+        
+        .footer { text-align: center; margin-top: 3rem; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Smart Visual Test Report</h1>
+            <p>AI-Powered Computer Vision UI Testing</p>
+            <p>Generated: 7/13/2025, 11:53:33 AM</p>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Test Steps</h3>
+                <div class="value">6</div>
+            </div>
+            <div class="summary-card">
+                <h3>Elements Detected</h3>
+                <div class="value">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Success Rate</h3>
+                <div class="value">0%</div>
+            </div>
+            <div class="summary-card">
+                <h3>Avg Confidence</h3>
+                <div class="value">0%</div>
+            </div>
+        </div>
+        
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 1: landing-page-analysis
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 824ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 2: primary-cta-interaction
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 804ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 3: post-navigation-analysis
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 903ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 4: form-interaction-test
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 830ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 5: back-navigation-test
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 803ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="test-step">
+                <div class="step-header">
+                    <div class="step-title">
+                        Step 6: theme-toggle-test
+                        <span class="result-failure">● FAILURE</span>
+                    </div>
+                    <div class="step-meta">
+                        <span>⏱️ 807ms</span>
+                        <span>🎯 0 elements</span>
+                        
+                    </div>
+                </div>
+                
+                <div class="step-content">
+                    
+                    
+                    
+                    
+                    <h4>Detected Interactive Elements (0)</h4>
+                    <div class="elements-grid">
+                        
+                    </div>
+                    
+                    
+                        <div class="errors">
+                            <h4>🚨 Errors</h4>
+                            <ul>
+                                <li>Step execution failed: TypeError: Cannot read properties of undefined (reading 'getElementVisualData')
+pptr:evaluate;SmartVisualTester.analyzeVisualElements%20(%2FUsers%2Fwojciechwiesner%2Fai%2Fborg-tools-mvp%2Ftests%2Fvisual%2Fsmart-visual-tester.ts%3A120%3A42):6:45</li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            </div>
+        
+        
+        <div class="footer">
+            <p>🧠 Generated by Smart Visual Testing Suite | Powered by Computer Vision & AI</p>
+        </div>
+    </div>
+</body>
+</html>
