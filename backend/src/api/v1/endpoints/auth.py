@@ -11,6 +11,9 @@ from pydantic import BaseModel
 import os
 
 from src.core.logging import get_logger
+from src.repositories import UserRepository, AuthSessionRepository
+from src.models.database import UserCreate, AuthSessionCreate
+from uuid import UUID
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -127,15 +130,16 @@ async def fetch_github_user(access_token: str) -> GitHubUser:
         return GitHubUser(**user_data)
 
 
-def create_jwt_token(user_data: dict) -> tuple[str, int]:
+def create_jwt_token(user_data: dict, user_id: str = None) -> tuple[str, int]:
     """Create JWT token for user."""
     expiry = datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS)
     
     payload = {
-        "sub": str(user_data["id"]),
+        "sub": user_id or str(user_data["id"]),
+        "github_id": user_data["id"],
         "login": user_data["login"],
-        "email": user_data["email"],
-        "name": user_data["name"],
+        "email": user_data.get("email"),
+        "name": user_data.get("name"),
         "exp": expiry,
         "iat": datetime.utcnow()
     }
@@ -182,7 +186,31 @@ async def github_callback(request: GitHubAuthRequest):
         # Fetch user data from GitHub
         github_user = await fetch_github_user(github_token)
         
-        # TODO: Create or update user in database
+        # Create or update user in database
+        user_repo = UserRepository()
+        user_create_data = UserCreate(
+            github_id=github_user.id,
+            github_username=github_user.login,
+            email=github_user.email,
+            full_name=github_user.name,
+            avatar_url=github_user.avatar_url,
+            bio=github_user.bio,
+            location=github_user.location,
+            company=github_user.company,
+            blog=github_user.blog,
+            github_profile_url=f"https://github.com/{github_user.login}"
+        )
+        
+        # Upsert user (create or update)
+        db_user = await user_repo.upsert(user_create_data)
+        
+        if not db_user:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create/update user"
+            )
+        
+        # Prepare user data for JWT
         user_data = {
             "id": github_user.id,
             "login": github_user.login,
@@ -199,8 +227,17 @@ async def github_callback(request: GitHubAuthRequest):
             "github_token": github_token  # Store for GitHub API access
         }
         
-        # Generate JWT token
-        jwt_token, expires_in = create_jwt_token(user_data)
+        # Generate JWT token with database user ID
+        jwt_token, expires_in = create_jwt_token(user_data, str(db_user.id))
+        
+        # Create auth session in database
+        auth_repo = AuthSessionRepository()
+        session_data = AuthSessionCreate(
+            user_id=db_user.id,
+            access_token=github_token,
+            expires_at=datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS)
+        )
+        await auth_repo.create(session_data)
         
         logger.info("GitHub OAuth successful", user_id=github_user.id, login=github_user.login)
         

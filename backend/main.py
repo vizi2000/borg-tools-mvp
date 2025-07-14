@@ -16,6 +16,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from src.api.v1.router import api_router
 from src.core.config import settings
 from src.core.logging import setup_logging
+from src.core.database import initialize_database, cleanup_expired_sessions
 
 # Setup logging
 setup_logging()
@@ -36,14 +37,21 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Borg-Tools Backend...")
     
-    # Initialize database connections, caches, etc.
-    # TODO: Add database initialization
+    # Initialize database
+    db_initialized = await initialize_database()
+    if not db_initialized:
+        print("⚠️  Database initialization failed, but continuing...")
+    
+    # Cleanup expired sessions on startup
+    await cleanup_expired_sessions()
     
     yield
     
     # Shutdown
     print("🛑 Shutting down Borg-Tools Backend...")
-    # TODO: Add cleanup tasks
+    
+    # Final cleanup of expired sessions
+    await cleanup_expired_sessions()
 
 
 # Create FastAPI application
