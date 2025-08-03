@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Use backend JWT verification
-      const response = await fetch('http://localhost:8000/api/v1/auth/me', {
+      const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

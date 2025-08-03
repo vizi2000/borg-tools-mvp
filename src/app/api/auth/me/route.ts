@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verify } from 'jsonwebtoken';
 
-interface JWTPayload {
-  user_id: string;
-  github_id: number;
-  username: string;
-  exp: number;
-}
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,31 +13,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const jwtSecret = process.env.SECRET_KEY || 'your_jwt_secret_key';
+    // Forward request to backend
+    const response = await fetch(`${BACKEND_URL}/api/v1/auth/me`, {
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
 
-    try {
-      const decoded = verify(token, jwtSecret) as JWTPayload;
-      
-      // TODO: Fetch full user data from database
-      // For now, return basic info from JWT
-      const userData = {
-        id: decoded.user_id,
-        github_id: decoded.github_id,
-        username: decoded.username,
-      };
-
-      return NextResponse.json(userData);
-
-    } catch (jwtError) {
+    if (!response.ok) {
+      const error = await response.text();
       return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
+        { error: error || 'Authentication failed' },
+        { status: response.status }
       );
     }
 
+    const data = await response.json();
+    
+    // Transform backend response to match frontend expectations
+    return NextResponse.json({
+      user: {
+        sub: data.user_id,
+        login: data.username,
+        name: data.username,
+        email: data.email || null,
+      }
+    });
+
   } catch (error) {
-    console.error('Auth me error:', error);
+    console.error('Auth me proxy error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

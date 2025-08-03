@@ -2,18 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🔴 CRITICAL: Global Rules Apply
+
+**MANDATORY**: Before ANY work on this project, you MUST:
+1. Read `/Users/wojciechwiesner/ai/GLOBAL_RULES.md`
+2. Check `/Users/wojciechwiesner/ai/DEPLOYMENT_REGISTRY.md` before deployments
+3. Follow ALL global rules without exception
+
 ## Project Overview
 
 Borg-Tools MVP is a one-click CV generator for developers that converts GitHub/LinkedIn profiles into professional PDFs with a "Neon Tech on Black" design. Built with Next.js 14, FastAPI, and LangGraph.
 
-## 🔄 Current Status (January 13, 2025)
+## 🔄 Current Status (January 15, 2025)
 
-**✅ AUTHENTICATION SYSTEM COMPLETE**
+**✅ AUTHENTICATION & DATABASE INTEGRATION COMPLETE**
 - GitHub OAuth flow implemented and tested
 - JWT token management with secure session handling
 - Frontend sign-in UI with OAuth callback processing
+- Database schema deployed (users, cv_generations, auth_sessions, usage_stats)
+- UserRepository and AuthSessionRepository fully implemented with Supabase
 - Visual testing validation confirms all flows work
-- Ready for database integration phase
+
+**🔧 NEXT PHASE: CV GENERATION PIPELINE**
+- Fix frontend/backend auth response format mismatch in `/api/auth/me`
+- Implement CV generation endpoint `/api/cv/generate`
+- Implement CV history endpoint `/api/cv/history`
+- Connect LangGraph agents for CV processing
 
 ## Common Development Commands
 

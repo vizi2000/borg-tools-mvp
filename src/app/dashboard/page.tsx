@@ -70,6 +70,13 @@ export default function DashboardPage() {
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <ThemeToggle />
+              <button
+                onClick={() => router.push('/settings')}
+                className="p-2 text-text-muted hover:text-primary transition-colors"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
               <div className="flex items-center space-x-3">
                 {user.avatar_url && (
                   <img 
